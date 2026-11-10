@@ -16,11 +16,11 @@ jobs:
         version: ['', latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: RubyElders/rb-setup@650baacaced39bdc6a6dfda74421cb762557bc69
+      - uses: RubyElders/rb-setup@v0.4.1
         id: first
         with:
           version: ${{ matrix.version }}
-      - uses: RubyElders/rb-setup@650baacaced39bdc6a6dfda74421cb762557bc69
+      - uses: RubyElders/rb-setup@v0.4.1
         id: repeated
         with:
           version: ${{ steps.first.outputs.rb-version }}
