@@ -1,0 +1,40 @@
+name: Consumer smoke
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: '43 6 * * *'
+permissions:
+  contents: read
+jobs:
+  install:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        version: ['', latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: RubyElders/rb-setup@650baacaced39bdc6a6dfda74421cb762557bc69
+        id: first
+        with:
+          version: ${{ matrix.version }}
+      - uses: RubyElders/rb-setup@650baacaced39bdc6a6dfda74421cb762557bc69
+        id: repeated
+        with:
+          version: ${{ steps.first.outputs.rb-version }}
+      - shell: pwsh
+        env:
+          FIRST_PATH: ${{ steps.first.outputs.rb-path }}
+          SECOND_PATH: ${{ steps.repeated.outputs.rb-path }}
+          EXPECTED: ${{ steps.repeated.outputs.rb-version }}
+          REQUESTED: ${{ matrix.version }}
+        run: |
+          if ($env:REQUESTED -eq '' -and $env:EXPECTED -ne '0.4.1') { throw 'Wrong paired version' }
+          if ($env:FIRST_PATH -ne $env:SECOND_PATH) { throw 'Tool path changed' }
+          if (-not (Test-Path $env:SECOND_PATH)) { throw 'Executable is missing' }
+          if ((Get-Command rb).Source -ne $env:SECOND_PATH) { throw 'PATH does not select installed rb' }
+          $actual = @(rb version)
+          if ($LASTEXITCODE -ne 0) { throw 'rb version failed' }
+          if ($actual[0].Trim() -ne "Ruby Butler v$env:EXPECTED") { throw 'Wrong executable version' }
